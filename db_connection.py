@@ -1,5 +1,6 @@
 import mysql.connector
 
+#creates connection
 mydb = mysql.connector.connect(
   host="localhost",
   user="penn_clubs",
@@ -7,8 +8,10 @@ mydb = mysql.connector.connect(
   database="pc"
 )
 
+#creates cursor to access database
 dbcursor = mydb.cursor()
 
+#resets the database
 def reset_db():
     query = "DELETE FROM pc_user_favorites WHERE id>0;"
     dbcursor.execute (query)

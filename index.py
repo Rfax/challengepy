@@ -11,15 +11,13 @@ app = Flask(__name__)
 # Set the secret key to some random bytes. Keep this really secret!
 app.secret_key = b'ne%qp*x^@fwca?ye'
 
-
+#initializes the database
 def init_db():
     reset_db()
     add_clubs_to_db (scrape_penn_clubs())
     User.create_user('jen','Jennifer', '12345')
     print("Database Initialized")
     
-#init_db()  
-
 
 @app.route('/')
 def main():
@@ -27,7 +25,23 @@ def main():
 
 @app.route('/api')
 def api():
-    return "Welcome to the Penn Club Review API! Here are the available functions:" #TODO List Functions
+    text = "Welcome to the Penn Club Review API! Here are the available functions:"
+    text += "\n /api/clubs"
+    text += "\n /api/clubs/search/name/<text>"
+    text += "\n /api/clubs/search/tag/<text>"
+    text += "\n /api/init"
+    text += "\n /api/user/login"
+    text += "\n /api/user/logout"
+    text += "\n /api/user/<username>"
+    text += "\n /api/favorite/add/<club_id>"
+    text += "\n /api/favorite/remove/<club_id>"
+    text += "\n /api/favorite/"
+    text += "\n /api/favorite/rank"
+    text += "\n /api/favorite/rankall"
+    text += "\n "
+
+    
+    return text
     
 @app.route('/api/clubs', methods=['GET', 'POST'])
 def api_clubs():
@@ -99,31 +113,27 @@ def api_clubs():
             
         print ("Where: " + where)
         print ("Params: " + str(params))
+                
+        result = Club.str_convert(Club.get_all_clubs(where, params))
         
-        result = []
-        
-        clubs = Club.get_all_clubs(where, params)
-        
-        if clubs == None:
-            result = "No clubs found"
-        else:
-            for club in clubs:
-                result.append(json.dumps(club.__dict__))
         
     return str(result)
+
+@app.route('/api/clubs/search/name/<text>')
+def api_club_name_search(text):
+    User.check_login()
+    return Club.str_convert(Club.search_clubs_by_name(text))
+    
+
+@app.route('/api/clubs/search/tag/<text>')
+def api_club_tag_search(text):
+    User.check_login()        
+    return Club.str_convert(Club.search_clubs_by_tag(text))
 
 @app.route('/api/init')
 def api_init_db():
     init_db()
     return "Database initialized successfully"
-
-@app.route('/api/favorite/rank')
-def api_favorite_rank():
-    return str(Club.favorite_ranking())
-
-@app.route('/api/favorite/rankall')
-def api_favorite_rankall():
-    return str(Club.favorite_ranking(True))
 
 @app.route('/api/user/login', methods=['GET', 'POST'])
 def api_login():
@@ -186,16 +196,14 @@ def api_view_favorite():
         clubs.append(club.__dict__)
             
     return str(clubs)
-    
 
-#TODO: remove tests below
+@app.route('/api/favorite/rank')
+def api_favorite_rank():
+    return str(Club.favorite_ranking())
 
-@app.route('/api/viewsession')
-def api_view_session():
-    u = session.get('user_id')
-    
-    return str(u)
-
+@app.route('/api/favorite/rankall')
+def api_favorite_rankall():
+    return str(Club.favorite_ranking(True))
 
 if __name__ == '__main__':
     app.run()

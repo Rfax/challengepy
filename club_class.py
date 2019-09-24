@@ -1,7 +1,9 @@
 from db_connection import *
+import json
 
 class Club:
   
+    #initializes values
     def __init__(self, id, name, description):
         self.id = id
         self.name = name
@@ -68,7 +70,8 @@ class Club:
         mydb.commit()
         
         self.tags.append(tag)
-        
+    
+    #reads club through id and returns object 
     @staticmethod
     def read_club (id):        
         query = "SELECT id, name, description FROM pc_clubs WHERE id = %s;"
@@ -89,6 +92,7 @@ class Club:
         
         return c
     
+    #fills the club object
     @staticmethod
     def fill_object(result):
         c = Club(result[0], result[1], result[2])
@@ -98,6 +102,7 @@ class Club:
         
         return c
     
+    #adds the tags to the club object
     def get_tags(self):
         query = "SELECT t.tag tag FROM pc_club_tags ct INNER JOIN pc_tags t ON ct.tag_id = t.id WHERE ct.club_id = %s;"
         
@@ -110,11 +115,67 @@ class Club:
         for tag in result:
             self.tags.append(tag[0])
     
+    #returns all the clubs given by a query with a filter
     @staticmethod        
     def get_all_clubs(where = "", params = ()):
         
         query = "SELECT id, name, description FROM pc_clubs" + where
                 
+        dbcursor.execute (query, params)
+        
+        result = dbcursor.fetchall()
+                
+        if (len(result) == 0):
+            # no club found
+            return None;
+        
+        clubs = []
+                
+        # fills all Club objects
+        for club in result:
+            clubs.append(Club.fill_object(club))
+        
+        return clubs
+    
+    #searches for clubs by their names
+    @staticmethod
+    def search_clubs_by_name(text):
+        
+        query = "SELECT id, name, description FROM pc_clubs WHERE name like %s"
+        
+        #adds wildcards to spaces so search is more complete
+        text = text.replace(" ", "%")
+                
+        params = ('%' + text + '%',)
+        
+        dbcursor.execute (query, params)
+        
+        result = dbcursor.fetchall()
+                
+        if (len(result) == 0):
+            # no club found
+            return None;
+        
+        clubs = []
+                
+        # fills all Club objects
+        for club in result:
+            clubs.append(Club.fill_object(club))
+        
+        return clubs
+    
+    #searches for clubs by their tags
+    @staticmethod
+    def search_clubs_by_tag(text):
+        
+        #DISTINCT is used to make sure that a club won't appear twice even if it's two or more of it's tags appear in the search
+        query = "SELECT DISTINCT c.id, c.name, c.description FROM pc_club_tags ct INNER JOIN pc_clubs c ON c.id = ct.club_id INNER JOIN pc_tags t on t.id = ct.tag_id WHERE t.tag like %s"
+        
+        #adds wildcards to spaces so search is more complete
+        text = text.replace(" ", "%")
+                
+        params = ('%' + text + '%',)
+        
         dbcursor.execute (query, params)
         
         result = dbcursor.fetchall()
@@ -146,7 +207,7 @@ class Club:
         if (result != None):
             self.favorite_count = result[1]
             
-    
+    #returns all the clubs, ranked by popularity
     @staticmethod
     def favorite_ranking(show_all = False):
         
@@ -171,27 +232,18 @@ class Club:
             clubs_rank.append([club[1],club[2]])
         
         return clubs_rank
-        
-    """"     
-    @staticmethod        
-    def get_clubs_by_tag(id = None, tag = None):
-        
-        query = "SELECT id, name, description FROM pc_clubs" + where
-                
-        dbcursor.execute (query, params)
-        
-        result = dbcursor.fetchall()
-                
-        if (len(result) == 0):
-            # no club found
-            return None;
-        
-        clubs = []
-                
-        # fills all Club objects
-        for club in result:
-            clubs.append(Club.fill_object(club))
-        
-        return clubs
-    """   
+    
+    #method used to display club information on screen
+    @staticmethod
+    def str_convert(clubs):
+        result = []
+                    
+        if clubs == None:
+            result = "No clubs found"
+        else:
+            for club in clubs:
+                result.append(json.dumps(club.__dict__))
+            
+        return str(result)    
+          
       
