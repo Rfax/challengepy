@@ -1,5 +1,6 @@
 from bs4 import BeautifulSoup
 import requests
+from club_class import *
 
 
 def get_html(url):
@@ -48,7 +49,7 @@ def get_clubs(soup):
     This function should return a list of soups with each soup corresponding to the html
     for a single club.
     """
-    return [] # TODO: Implement this function
+    return get_elements_with_class(soup, 'div', 'box')
 
 def get_club_name(club):
     """
@@ -65,11 +66,40 @@ def get_club_description(club):
     """
     Extract club description from a soup containing a single club.
     """
-    return '' # TODO: Implement this function
+    elts = get_elements_with_class(club, 'em', '')
+    if len(elts) < 1:
+        return ''
+    return elts[0].text
 
 def get_club_tags(club):
     """
     Get the tag labels for all tags associated with a single club.
     """
-    return [] # TODO: Implement this function
+    tags = []
+    
+    elts = get_elements_with_class(club, 'span', 'tag')
+    
+    for tag in elts:
+        tags.append(tag.text)
+    
+    return tags
+
+def scrape_penn_clubs():
+    
+    clubs = []
+    
+    for club in (get_clubs(soupify(get_clubs_html()))):
+        name = get_club_name (club)
+        description = get_club_description (club)
+        tags = get_club_tags (club)
+                
+        clubs.append([name, description, tags])
+    
+    return clubs
+
+def add_clubs_to_db (clubs):
+    
+    for c in clubs:
+        Club.create_club (c[0], c[1], c[2])
+        
 
